@@ -4,13 +4,13 @@ use ieee.numeric_std.all;
 
 entity mini_project is
     port (
-        Clock     : in  std_logic;    -- System clock input
-        reset     : in  std_logic;    -- Reset input
-        led_out   : out std_logic;    -- LED output
-        seven_seg_min1 : out std_logic_vector (6 downto 0); -- 7-segment for Minutes (first digit)
-        seven_seg_min2 : out std_logic_vector (6 downto 0); -- 7-segment for Minutes (second digit)
-        seven_seg_hur1 : out std_logic_vector (6 downto 0); -- 7-segment for Hours (first digit)
-        seven_seg_hur2 : out std_logic_vector (6 downto 0)  -- 7-segment for Hours (second digit)
+        Clock           : in  std_logic;    -- System clock input
+        reset           : in  std_logic;    -- Reset input
+        led_out         : out std_logic;    -- LED output
+        seven_seg_min1  : out std_logic_vector (6 downto 0); -- 7-segment for Minutes (first digit)
+        seven_seg_min2  : out std_logic_vector (6 downto 0); -- 7-segment for Minutes (second digit)
+        seven_seg_hur1  : out std_logic_vector (6 downto 0); -- 7-segment for Hours (first digit)
+        seven_seg_hur2  : out std_logic_vector (6 downto 0)  -- 7-segment for Hours (second digit)
     );
 end entity mini_project;
 

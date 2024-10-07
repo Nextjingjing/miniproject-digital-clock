@@ -25,11 +25,17 @@ begin
     process(Clock)
     begin
         if rising_edge(Clock) then
+            -- Active-low reset
             if reset = '0' then
-                counts  <= 0;
-                Seconds <= 0;
-                Minutes <= 0;
-                Hours   <= 0;
+                -- Reset all values to 0
+                counts    <= 0;
+                Seconds   <= 0;
+                Minutes   <= 0;
+                Hours     <= 0;
+                Min_pin1  <= "0000";
+                Min_pin2  <= "0000";
+                Hur_pin1  <= "0000";
+                Hur_pin2  <= "0000";
             else
                 counts <= counts + 1;
 
@@ -59,7 +65,6 @@ begin
                         end if;
                     else
                         Seconds <= Seconds + 1;
-                        
                     end if;
                 else
                     counts <= counts + 1;
