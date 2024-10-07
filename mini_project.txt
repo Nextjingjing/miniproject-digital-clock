@@ -6,7 +6,11 @@ entity mini_project is
     port (
         Clock     : in  std_logic;    -- System clock input
         reset     : in  std_logic;    -- Reset input
-        led_out   : out std_logic     -- LED output
+        led_out   : out std_logic;    -- LED output
+        seven_seg_min1 : out std_logic_vector (6 downto 0); -- 7-segment for Minutes (first digit)
+        seven_seg_min2 : out std_logic_vector (6 downto 0); -- 7-segment for Minutes (second digit)
+        seven_seg_hur1 : out std_logic_vector (6 downto 0); -- 7-segment for Hours (first digit)
+        seven_seg_hur2 : out std_logic_vector (6 downto 0)  -- 7-segment for Hours (second digit)
     );
 end entity mini_project;
 
@@ -51,6 +55,38 @@ begin
             reset    => reset,
             seconds  => Seconds,
             led_out  => led_out
+        );
+
+    -- Instance of BDC_to_7_segmen for Minutes (first digit)
+    bdc_to_7seg_min1: entity work.BDC_to_7_segmen
+        port map (
+            BCD_i     => std_logic_vector(Min_pin1),  -- Convert signed to std_logic_vector
+            clk_i     => Clock,
+            seven_seg => seven_seg_min1
+        );
+
+    -- Instance of BDC_to_7_segmen for Minutes (second digit)
+    bdc_to_7seg_min2: entity work.BDC_to_7_segmen
+        port map (
+            BCD_i     => std_logic_vector(Min_pin2),  -- Convert signed to std_logic_vector
+            clk_i     => Clock,
+            seven_seg => seven_seg_min2
+        );
+
+    -- Instance of BDC_to_7_segmen for Hours (first digit)
+    bdc_to_7seg_hur1: entity work.BDC_to_7_segmen
+        port map (
+            BCD_i     => std_logic_vector(Hur_pin1),  -- Convert signed to std_logic_vector
+            clk_i     => Clock,
+            seven_seg => seven_seg_hur1
+        );
+
+    -- Instance of BDC_to_7_segmen for Hours (second digit)
+    bdc_to_7seg_hur2: entity work.BDC_to_7_segmen
+        port map (
+            BCD_i     => std_logic_vector(Hur_pin2),  -- Convert signed to std_logic_vector
+            clk_i     => Clock,
+            seven_seg => seven_seg_hur2
         );
 
 end architecture Behavioral;
