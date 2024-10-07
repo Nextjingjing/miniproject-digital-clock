@@ -1,0 +1,56 @@
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+entity mini_project is
+    port (
+        Clock     : in  std_logic;    -- System clock input
+        reset     : in  std_logic;    -- Reset input
+        led_out   : out std_logic     -- LED output
+    );
+end entity mini_project;
+
+architecture Behavioral of mini_project is
+    -- Internal signals
+    signal Seconds    : integer := 0;
+    signal Minutes    : integer := 0;
+    signal Hours      : integer := 0;
+    signal Min_pin1   : signed(3 downto 0) := "0000";
+    signal Min_pin2   : signed(3 downto 0) := "0000";
+    signal Hur_pin1   : signed(3 downto 0) := "0000";
+    signal Hur_pin2   : signed(3 downto 0) := "0000";
+
+    -- Constants
+    constant ClockFreq : integer := 10000000; -- 10 MHz clock frequency
+
+begin
+    -- Instance of Digital_clock
+    digital_clock_inst: entity work.Digital_clock
+        generic map (
+            ClockFreq => ClockFreq
+        )
+        port map (
+            Clock     => Clock,
+            reset     => reset,
+            Seconds   => Seconds,
+            Minutes   => Minutes,
+            Hours     => Hours,
+            Min_pin1  => Min_pin1,
+            Min_pin2  => Min_pin2,
+            Hur_pin1  => Hur_pin1,
+            Hur_pin2  => Hur_pin2
+        );
+
+    -- Instance of Led_Control
+    led_control_inst: entity work.Led_Control
+        generic map (
+            ClockFreq => ClockFreq
+        )
+        port map (
+            Clock    => Clock,
+            reset    => reset,
+            seconds  => Seconds,
+            led_out  => led_out
+        );
+
+end architecture Behavioral;
