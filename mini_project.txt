@@ -4,45 +4,75 @@ use ieee.numeric_std.all;
 
 entity mini_project is
     port (
-        Clock           : in  std_logic;    -- System clock input
-        reset           : in  std_logic;    -- Reset input
-        led_out         : out std_logic;    -- LED output
-        seven_seg_min1  : out std_logic_vector (6 downto 0); -- 7-segment for Minutes (first digit)
-        seven_seg_min2  : out std_logic_vector (6 downto 0); -- 7-segment for Minutes (second digit)
-        seven_seg_hur1  : out std_logic_vector (6 downto 0); -- 7-segment for Hours (first digit)
-        seven_seg_hur2  : out std_logic_vector (6 downto 0)  -- 7-segment for Hours (second digit)
+        Clock           : in  std_logic;                       -- System clock input
+        reset           : in  std_logic;                       -- Reset input
+        Set             : in  std_logic;                       -- Mode Set signal
+        Up_Down         : in  std_logic;                       -- Up/Down signal for mode setter
+        led_out         : out std_logic;                      -- LED output
+        seven_seg_min1  : out std_logic_vector (6 downto 0);   -- 7-segment for Minutes (first digit)
+        seven_seg_min2  : out std_logic_vector (6 downto 0);   -- 7-segment for Minutes (second digit)
+        seven_seg_hur1  : out std_logic_vector (6 downto 0);   -- 7-segment for Hours (first digit)
+        seven_seg_hur2  : out std_logic_vector (6 downto 0)    -- 7-segment for Hours (second digit)
     );
 end entity mini_project;
 
 architecture Behavioral of mini_project is
     -- Internal signals
-    signal Seconds    : integer := 0;
-    signal Minutes    : integer := 0;
-    signal Hours      : integer := 0;
-    signal Min_pin1   : signed(3 downto 0) := "0000";
-    signal Min_pin2   : signed(3 downto 0) := "0000";
-    signal Hur_pin1   : signed(3 downto 0) := "0000";
-    signal Hur_pin2   : signed(3 downto 0) := "0000";
+    signal Seconds        : integer := 0;
+    signal Minutes        : integer := 0;
+    signal Hours          : integer := 0;
+    signal Min_pin1       : std_logic_vector(3 downto 0) := "0000";
+    signal Min_pin2       : std_logic_vector(3 downto 0) := "0000";
+    signal Hur_pin1       : std_logic_vector(3 downto 0) := "0000";
+    signal Hur_pin2       : std_logic_vector(3 downto 0) := "0000";
+    signal setter_minutes : integer := 0;  -- Minutes set by Mode_setter
+    signal setter_hours   : integer := 0;  -- Hours set by Mode_setter
+    signal Mode           : integer := 0;  -- Mode state (0: normal, 1: set minutes, 2: set hours)
+
+    -- Additional signal for Set_Enable
+    signal set_enable_signal : std_logic := '0'; -- Initialized to '0'
 
     -- Constants
     constant ClockFreq : integer := 10000000; -- 10 MHz clock frequency
 
 begin
+    -- Concurrent signal assignment to compute Set_Enable
+    set_enable_signal <= '1' when (Mode /= 0) else '0';
+
+    -- Instance of Mode_setter
+    mode_setter_inst: entity work.Mode_setter
+        port map (
+            Clock           => Clock,
+            reset           => reset,
+            Set             => Set,
+            Up_Down         => Up_Down,
+            Current_Minutes => Minutes,
+            Current_Hours   => Hours,
+            setter_minutes  => setter_minutes,
+            setter_hours    => setter_hours,
+            Mode            => Mode
+            -- Removed: Seconds => Seconds to prevent multiple drivers
+        );
+
     -- Instance of Digital_clock
     digital_clock_inst: entity work.Digital_clock
         generic map (
             ClockFreq => ClockFreq
         )
         port map (
-            Clock     => Clock,
-            reset     => reset,
-            Seconds   => Seconds,
-            Minutes   => Minutes,
-            Hours     => Hours,
-            Min_pin1  => Min_pin1,
-            Min_pin2  => Min_pin2,
-            Hur_pin1  => Hur_pin1,
-            Hur_pin2  => Hur_pin2
+            Clock       => Clock,
+            reset       => reset,
+            Seconds     => Seconds,
+            Minutes     => Minutes,
+            Hours       => Hours,
+            Set_Hours   => setter_hours,
+            Set_Minutes => setter_minutes,
+            Set_Seconds => 0,                       -- Not using second setting from Mode_setter
+            Set_Enable  => set_enable_signal,       -- Use the precomputed signal
+            Min_pin1    => Min_pin1,
+            Min_pin2    => Min_pin2,
+            Hur_pin1    => Hur_pin1,
+            Hur_pin2    => Hur_pin2
         );
 
     -- Instance of Led_Control
@@ -53,14 +83,14 @@ begin
         port map (
             Clock    => Clock,
             reset    => reset,
-            seconds  => Seconds,
+            seconds  => Seconds,        -- Read-only input
             led_out  => led_out
         );
 
     -- Instance of BDC_to_7_segmen for Minutes (first digit)
     bdc_to_7seg_min1: entity work.BDC_to_7_segmen
         port map (
-            BCD_i     => std_logic_vector(Min_pin1),  -- Convert signed to std_logic_vector
+            BCD_i     => Min_pin1,          -- Already std_logic_vector
             clk_i     => Clock,
             seven_seg => seven_seg_min1
         );
@@ -68,7 +98,7 @@ begin
     -- Instance of BDC_to_7_segmen for Minutes (second digit)
     bdc_to_7seg_min2: entity work.BDC_to_7_segmen
         port map (
-            BCD_i     => std_logic_vector(Min_pin2),  -- Convert signed to std_logic_vector
+            BCD_i     => Min_pin2,
             clk_i     => Clock,
             seven_seg => seven_seg_min2
         );
@@ -76,7 +106,7 @@ begin
     -- Instance of BDC_to_7_segmen for Hours (first digit)
     bdc_to_7seg_hur1: entity work.BDC_to_7_segmen
         port map (
-            BCD_i     => std_logic_vector(Hur_pin1),  -- Convert signed to std_logic_vector
+            BCD_i     => Hur_pin1,
             clk_i     => Clock,
             seven_seg => seven_seg_hur1
         );
@@ -84,7 +114,7 @@ begin
     -- Instance of BDC_to_7_segmen for Hours (second digit)
     bdc_to_7seg_hur2: entity work.BDC_to_7_segmen
         port map (
-            BCD_i     => std_logic_vector(Hur_pin2),  -- Convert signed to std_logic_vector
+            BCD_i     => Hur_pin2,
             clk_i     => Clock,
             seven_seg => seven_seg_hur2
         );

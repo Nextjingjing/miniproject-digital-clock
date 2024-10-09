@@ -1,0 +1,130 @@
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+entity Mode_setter is
+    port (
+        Clock           : in  std_logic;
+        reset           : in  std_logic;
+        Set             : in  std_logic;     
+        Up_Down         : in  std_logic;   
+
+        Current_Minutes : in  integer;  
+        Current_Hours   : in  integer;    
+        setter_minutes  : out integer;  
+        setter_hours    : out integer;    
+        Mode            : out integer             
+    );
+end entity Mode_setter;
+
+architecture behavior of Mode_setter is
+    -- Define the possible states
+    type state_type is (normal, set_minutes, set_hours);
+    signal state             : state_type := normal;   
+    signal half_second_count : integer := 0; 
+    signal internal_minutes  : integer := 0;  
+    signal internal_hours    : integer := 0;    
+
+    -- Signals for edge detection
+    signal Set_prev          : std_logic := '1'; -- Previous state of Set (assuming active-low)
+    signal Set_pulse         : std_logic := '0'; -- Pulse signal for Set button press
+
+    constant ClockFreq   : integer := 10000000;  
+    constant Half_Second : integer := ClockFreq / 2; 
+begin
+
+    -- Process to detect falling edge and generate a one-cycle pulse
+    edge_detection: process(Clock)
+    begin
+        if rising_edge(Clock) then
+            if reset = '0' then
+                Set_prev  <= '1';
+                Set_pulse <= '0';
+            else
+                -- Detect falling edge: Set goes from '1' to '0'
+                if (Set_prev = '1' and Set = '0') then
+                    Set_pulse <= '1'; -- Generate a pulse
+                else
+                    Set_pulse <= '0';
+                end if;
+                -- Update previous Set state
+                Set_prev <= Set;
+            end if;
+        end if;
+    end process edge_detection;
+
+    -- Main process to handle state transitions and settings
+    state_machine: process(Clock)
+    begin
+        if rising_edge(Clock) then
+            if reset = '0' then
+                -- Reset all signals
+                state             <= normal;
+                internal_minutes  <= 0;
+                internal_hours    <= 0;
+                setter_minutes    <= 0;
+                setter_hours      <= 0;
+                half_second_count <= 0;
+                Mode              <= 0;
+            else
+                -- Change state only on Set_pulse
+                if Set_pulse = '1' then
+                    case state is
+                        when normal =>
+                            state <= set_minutes;   
+                            Mode  <= 1;
+                        when set_minutes =>
+                            state <= set_hours;     
+                            Mode  <= 2;
+                        when set_hours =>
+                            state <= normal;        
+                            Mode  <= 0;
+                        when others =>
+                            null;  -- No action
+                    end case;
+                end if;
+
+                -- Handle settings when not in normal state
+                if state /= normal then
+                    if half_second_count = Half_Second then
+                        half_second_count <= 0;
+
+                        case state is
+                            when set_minutes =>
+                                if Up_Down = '1' then
+                                    internal_minutes <= (internal_minutes + 1) mod 60; 
+                                else
+                                    if internal_minutes = 0 then
+                                        internal_minutes <= 59; 
+                                    else
+                                        internal_minutes <= internal_minutes - 1;
+                                    end if;
+                                end if;
+                                setter_minutes <= internal_minutes;
+                                -- Removed: Seconds <= 0; 
+
+                            when set_hours =>
+                                if Up_Down = '1' then
+                                    internal_hours <= (internal_hours + 1) mod 24; 
+                                else
+                                    if internal_hours = 0 then
+                                        internal_hours <= 23; 
+                                    else
+                                        internal_hours <= internal_hours - 1;
+                                    end if;
+                                end if;
+                                setter_hours <= internal_hours;
+                                -- Removed: Seconds <= 0; 
+
+                            when others =>
+                                null;  -- No action for other states
+                        end case;
+                    else
+                        half_second_count <= half_second_count + 1;
+                    end if;
+                end if;
+            end if;
+        end if;
+    end process state_machine;
+
+end architecture behavior;
