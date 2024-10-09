@@ -7,6 +7,7 @@ entity mini_project is
         Clock           : in  std_logic;                       -- System clock input
         reset           : in  std_logic;                       -- Reset input
         Set             : in  std_logic;                       -- Mode Set signal
+        Adjust          : in  std_logic;                       -- Adjust button signal
         Up_Down         : in  std_logic;                       -- Up/Down signal for mode setter
         led_out         : out std_logic;                      -- LED output
         seven_seg_min1  : out std_logic_vector (6 downto 0);   -- 7-segment for Minutes (first digit)
@@ -39,19 +40,19 @@ begin
     -- Concurrent signal assignment to compute Set_Enable
     set_enable_signal <= '1' when (Mode /= 0) else '0';
 
-    -- Instance of Mode_setter
+    -- Instance of Mode_setter with Adjust and Debounce
     mode_setter_inst: entity work.Mode_setter
         port map (
             Clock           => Clock,
             reset           => reset,
             Set             => Set,
+            Adjust          => Adjust,          -- เชื่อมต่อ Adjust
             Up_Down         => Up_Down,
             Current_Minutes => Minutes,
             Current_Hours   => Hours,
             setter_minutes  => setter_minutes,
             setter_hours    => setter_hours,
             Mode            => Mode
-            -- Removed: Seconds => Seconds to prevent multiple drivers
         );
 
     -- Instance of Digital_clock
